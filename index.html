@@ -186,7 +186,7 @@
         <a href="#" onclick="showSection('donate')">রক্তদান করুন</a>
         <a href="#" onclick="showSection('request')">রক্ত খুঁজুন</a>
         <a href="#" onclick="showSection('motivation')">মোটিভেশন</a>
-        <a href="#" onclick="syncData()">ডাটা সিঙ্ক করুন <small>(সব ডিভাইসে আপডেট পেতে)</small></a>
+        <a href="#" onclick="syncData()">ডাটা সিঙ্ক করুন</a>
     </nav>
 
     <div id="syncStatus" class="sync-status hidden"></div>
@@ -335,22 +335,64 @@
     </section>
 
     <footer style="text-align:center; padding:1rem; background-color:#ff4d4d; color:white; margin-top:1rem;">
-        <p>© 2023 যশোর রক্তদাতা নেটওয়ার্ক</p>
-        <p>জরুরী প্রয়োজনে কল করুন: ০১৭XX-XXXXXX</p>
+        <p>© 2025 যশোর রক্তদাতা নেটওয়ার্ক</p>
+        <p>জরুরী প্রয়োজনে কল করুন: ০১৭২৯-৬৯০৮৩৫</p>
     </footer>
 
     <script>
-        // ==================== কনফিগারেশন ====================
-        const GIST_ID = '2f40bd034c51e66cd46dfc581c4bfff3'; // আপনার Gist আইডি
-        const GH_TOKEN = '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'; // আপনার GitHub টোকেন
-
-        // ==================== ডাটা মডেল ====================
+        // JSONBin.io কনফিগারেশন
+        const JSONBIN_API_KEY = '$2a$10$66dgv8EgYiBInvjwZSNDJ.vkMVDocOlMxJ2f7Z9AwBXfyJgERarLy';
+        const JSONBIN_BIN_ID = '67e39d008960c979a578a42d';
+        const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+        
+        // ডাটা স্টোরেজ
         let donors = [];
         const upazilas = {
             'যশোর': ['যশোর সদর', 'কেশবপুর', 'চৌগাছা', 'মনিরামপুর', 'ঝিকরগাছা', 'বাঘারপাড়া', 'অভয়নগর', 'শার্শা']
         };
 
-        // ==================== ইউটিলিটি ফাংশন ====================
+        // বিভাগ ও জেলা লোড করার ফাংশন
+        function loadDistricts() {
+            const division = document.getElementById('division').value;
+            const districtSelect = document.getElementById('district');
+            districtSelect.innerHTML = '<option value="">জেলা নির্বাচন করুন</option>';
+            if (division === 'খুলনা') {
+                districtSelect.innerHTML += '<option value="যশোর">যশোর</option>';
+            }
+        }
+
+        function loadUpazilas() {
+            const district = document.getElementById('district').value;
+            const upazilaSelect = document.getElementById('upazila');
+            upazilaSelect.innerHTML = '<option value="">উপজেলা নির্বাচন করুন</option>';
+            if (district && upazilas[district]) {
+                upazilas[district].forEach(upazila => {
+                    upazilaSelect.innerHTML += `<option value="${upazila}">${upazila}</option>`;
+                });
+            }
+        }
+
+        function loadSearchDistricts() {
+            const division = document.getElementById('searchDivision').value;
+            const districtSelect = document.getElementById('searchDistrict');
+            districtSelect.innerHTML = '<option value="">জেলা নির্বাচন করুন</option>';
+            if (division === 'খুলনা') {
+                districtSelect.innerHTML += '<option value="যশোর">যশোর</option>';
+            }
+        }
+
+        function loadSearchUpazilas() {
+            const district = document.getElementById('searchDistrict').value;
+            const upazilaSelect = document.getElementById('searchUpazila');
+            upazilaSelect.innerHTML = '<option value="">উপজেলা নির্বাচন করুন</option>';
+            if (district && upazilas[district]) {
+                upazilas[district].forEach(upazila => {
+                    upazilaSelect.innerHTML += `<option value="${upazila}">${upazila}</option>`;
+                });
+            }
+        }
+
+        // সেকশন প্রদর্শন
         function showSection(sectionId) {
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.add('hidden');
@@ -359,22 +401,22 @@
             window.scrollTo(0, 0);
         }
 
+        // স্ট্যাটাস বার প্রদর্শন
         function showSyncStatus(message, isSuccess) {
             const statusDiv = document.getElementById('syncStatus');
             statusDiv.textContent = message;
             statusDiv.className = isSuccess ? 'sync-status success' : 'sync-status error';
             statusDiv.classList.remove('hidden');
-            
-            setTimeout(() => {
-                statusDiv.classList.add('hidden');
-            }, 5000);
+            setTimeout(() => statusDiv.classList.add('hidden'), 5000);
         }
 
+        // তারিখ ফরম্যাট
         function formatDate(dateString) {
             const options = { year: 'numeric', month: 'long', day: 'numeric' };
             return new Date(dateString).toLocaleDateString('bn-BD', options);
         }
 
+        // রক্তদানের যোগ্যতা চেক
         function canDonateAgain(lastDonationDate) {
             const lastDate = new Date(lastDonationDate);
             const currentDate = new Date();
@@ -382,174 +424,60 @@
             return diffInMonths >= 3;
         }
 
-        // ==================== লোকেশন সিলেক্টর ====================
-        function loadDistricts() {
-            const division = document.getElementById('division').value;
-            const districtSelect = document.getElementById('district');
-            
-            districtSelect.innerHTML = '<option value="">জেলা নির্বাচন করুন</option>';
-            
-            if (division === 'খুলনা') {
-                const option = document.createElement('option');
-                option.value = 'যশোর';
-                option.textContent = 'যশোর';
-                districtSelect.appendChild(option);
-            }
-        }
-
-        function loadUpazilas() {
-            const district = document.getElementById('district').value;
-            const upazilaSelect = document.getElementById('upazila');
-            
-            upazilaSelect.innerHTML = '<option value="">উপজেলা নির্বাচন করুন</option>';
-            
-            if (district && upazilas[district]) {
-                upazilas[district].forEach(upazila => {
-                    const option = document.createElement('option');
-                    option.value = upazila;
-                    option.textContent = upazila;
-                    upazilaSelect.appendChild(option);
-                });
-            }
-        }
-
-        function loadSearchDistricts() {
-            const division = document.getElementById('searchDivision').value;
-            const districtSelect = document.getElementById('searchDistrict');
-            
-            districtSelect.innerHTML = '<option value="">জেলা নির্বাচন করুন</option>';
-            
-            if (division === 'খুলনা') {
-                const option = document.createElement('option');
-                option.value = 'যশোর';
-                option.textContent = 'যশোর';
-                districtSelect.appendChild(option);
-            }
-        }
-
-        function loadSearchUpazilas() {
-            const district = document.getElementById('searchDistrict').value;
-            const upazilaSelect = document.getElementById('searchUpazila');
-            
-            upazilaSelect.innerHTML = '<option value="">উপজেলা নির্বাচন করুন</option>';
-            
-            if (district && upazilas[district]) {
-                upazilas[district].forEach(upazila => {
-                    const option = document.createElement('option');
-                    option.value = upazila;
-                    option.textContent = upazila;
-                    upazilaSelect.appendChild(option);
-                });
-            }
-        }
-
-        // ==================== GIST অপারেশন ====================
-        async function updateGist(data) {
+        // JSONBin.io থেকে ডাটা লোড
+        async function loadDonorData() {
             try {
-                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                    method: 'PATCH',
+                const response = await fetch(`${JSONBIN_URL}/latest`, {
+                    headers: { 'X-Master-Key': JSONBIN_API_KEY }
+                });
+                const data = await response.json();
+                donors = data.record.donors || [];
+                localStorage.setItem('bloodDonors', JSON.stringify(donors));
+                return donors;
+            } catch (error) {
+                console.error('ডাটা লোড করতে সমস্যা:', error);
+                const localData = localStorage.getItem('bloodDonors');
+                donors = localData ? JSON.parse(localData) : [];
+                showSyncStatus('নেটওয়ার্ক সমস্যা, লোকাল ডাটা ব্যবহার করা হচ্ছে', false);
+                return donors;
+            }
+        }
+
+        // JSONBin.io-তে ডাটা সেভ
+        async function saveDonorData(donor) {
+            try {
+                // প্রথমে বর্তমান ডাটা লোড করুন
+                const currentData = await loadDonorData();
+                
+                // নতুন ডাটা যোগ করুন
+                const updatedDonors = [...currentData, donor];
+                
+                // JSONBin.io-তে আপডেট করুন
+                const response = await fetch(JSONBIN_URL, {
+                    method: 'PUT',
                     headers: {
-                        'Authorization': `token ${GH_TOKEN}`,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/vnd.github.v3+json'
+                        'X-Master-Key': JSONBIN_API_KEY
                     },
-                    body: JSON.stringify({
-                        files: {
-                            'blood_donors.json': {
-                                content: JSON.stringify(data)
-                            }
-                        }
-                    })
+                    body: JSON.stringify({ donors: updatedDonors })
                 });
-
-                if (!response.ok) {
-                    throw new Error(`GitHub error: ${response.status}`);
-                }
-
-                return await response.json();
+                
+                const result = await response.json();
+                donors = updatedDonors;
+                localStorage.setItem('bloodDonors', JSON.stringify(donors));
+                showSyncStatus('ডাটা সফলভাবে সংরক্ষণ করা হয়েছে!', true);
+                return result;
             } catch (error) {
-                console.error('Gist update failed:', error);
+                console.error('ডাটা সেভ করতে সমস্যা:', error);
+                // লোকালে সেভ করুন
+                donors.push(donor);
+                localStorage.setItem('bloodDonors', JSON.stringify(donors));
+                showSyncStatus('ডাটা লোকালে সেভ হয়েছে, কিন্তু অনলাইনে সেভ হয়নি', false);
                 throw error;
             }
         }
 
-        async function loadFromGist() {
-            try {
-                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-                    headers: {
-                        'Authorization': `token ${GH_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`GitHub error: ${response.status}`);
-                }
-
-                const gistData = await response.json();
-                return JSON.parse(gistData.files['blood_donors.json'].content);
-            } catch (error) {
-                console.error('Gist load failed:', error);
-                throw error;
-            }
-        }
-
-        // ==================== সিঙ্ক ফাংশন ====================
-        async function syncData() {
-            showSyncStatus('ডাটা সিঙ্ক করা হচ্ছে... (অন্যান্য ডিভাইসে ডাটা আপডেট করতে এই বাটন ক্লিক করুন)', false);
-
-            try {
-                // 1. লোকাল ডাটা লোড করুন
-                const localData = JSON.parse(localStorage.getItem('bloodDonors')) || [];
-                
-                // 2. GitHub থেকে ডাটা আনুন
-                const remoteData = await loadFromGist();
-                
-                // 3. ডাটা মার্জ করুন
-                const mergedData = mergeDonors(localData, remoteData);
-                
-                // 4. লোকাল স্টোরেজ আপডেট করুন
-                localStorage.setItem('bloodDonors', JSON.stringify(mergedData));
-                donors = mergedData;
-                
-                // 5. GitHub এ আপডেট পাঠান
-                await updateGist(mergedData);
-                
-                showSyncStatus('ডাটা সফলভাবে সিঙ্ক হয়েছে! সব ডিভাইসে এখন আপডেটেড ডাটা দেখাবে', true);
-                
-            } catch (error) {
-                console.error('সিঙ্ক ইরর:', error);
-                
-                let errorMsg = 'সিঙ্ক করতে সমস্যা: ';
-                if (error.message.includes('Failed to fetch')) {
-                    errorMsg += 'ইন্টারনেট সংযোগ নেই বা GitHub ডাউন';
-                } else if (error.message.includes('401')) {
-                    errorMsg += 'অনুমতি সমস্যা, GitHub টোকেন চেক করুন';
-                } else if (error.message.includes('404')) {
-                    errorMsg += 'Gist খুঁজে পাওয়া যায়নি, Gist ID চেক করুন';
-                } else {
-                    errorMsg += error.message;
-                }
-                
-                showSyncStatus(errorMsg, false);
-            }
-        }
-
-        function mergeDonors(localDonors, remoteDonors) {
-            const merged = [...localDonors];
-            const existingPhones = new Set(localDonors.map(d => d.phone));
-            
-            remoteDonors.forEach(donor => {
-                if (!existingPhones.has(donor.phone)) {
-                    merged.push(donor);
-                    existingPhones.add(donor.phone);
-                }
-            });
-            
-            return merged;
-        }
-
-        // ==================== ফর্ম হ্যান্ডলিং ====================
+        // ফর্ম সাবমিশন
         document.getElementById('donorForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -561,95 +489,72 @@
                 division: document.getElementById('division').value,
                 district: document.getElementById('district').value,
                 upazila: document.getElementById('upazila').value,
-                location: `${document.getElementById('division').value}, ${document.getElementById('district').value}, ${document.getElementById('upazila').value}`,
                 lastDonation: document.getElementById('lastDonation').value,
                 timestamp: new Date().toISOString()
             };
             
-            // লোকাল ডাটা আপডেট
-            donors.push(donor);
-            localStorage.setItem('bloodDonors', JSON.stringify(donors));
-            
-            // GitHub এ সেভ করার চেষ্টা করুন
-            try {
-                await updateGist(donors);
-                showSyncStatus('ধন্যবাদ! আপনার তথ্য সফলভাবে সংরক্ষণ করা হয়েছে', true);
-            } catch (error) {
-                showSyncStatus('আপনার তথ্য লোকালে সেভ হয়েছে, কিন্তু অনলাইনে সেভ হয়নি। পরে আবার সিঙ্ক করুন', false);
-            }
-            
+            await saveDonorData(donor);
             this.reset();
             document.getElementById('lastDonation').valueAsDate = new Date();
             showSection('home');
         });
 
-        function searchDonors() {
+        // রক্তদাতা খুঁজুন
+        async function searchDonors() {
             const bloodGroup = document.getElementById('searchBlood').value;
-            const division = document.getElementById('searchDivision').value;
-            const district = document.getElementById('searchDistrict').value;
             const upazila = document.getElementById('searchUpazila').value;
+            
+            await loadDonorData();
             
             let matchedDonors = donors;
             
             if (bloodGroup) {
-                matchedDonors = matchedDonors.filter(donor => donor.bloodGroup === bloodGroup);
-            }
-            
-            if (division) {
-                matchedDonors = matchedDonors.filter(donor => donor.division === division);
-            }
-            
-            if (district) {
-                matchedDonors = matchedDonors.filter(donor => donor.district === district);
+                matchedDonors = matchedDonors.filter(d => d.bloodGroup === bloodGroup);
             }
             
             if (upazila) {
-                matchedDonors = matchedDonors.filter(donor => donor.upazila === upazila);
+                matchedDonors = matchedDonors.filter(d => d.upazila === upazila);
             }
             
             const donorList = document.getElementById('donorList');
             
             if (matchedDonors.length === 0) {
-                donorList.innerHTML = '<div class="donor-card"><p>দুঃখিত, আপনার প্রয়োজনীয় রক্তের গ্রুপের কোনো দাতা পাওয়া যায়নি। অনুগ্রহ করে কিছুক্ষণ পর আবার চেষ্টা করুন অথবা আমাদের হেল্পলাইনে যোগাযোগ করুন।</p></div>';
+                donorList.innerHTML = '<div class="donor-card"><p>কোনো রক্তদাতা পাওয়া যায়নি</p></div>';
             } else {
                 donorList.innerHTML = matchedDonors.map(donor => `
                     <div class="donor-card">
                         <h3>${donor.name}</h3>
                         <p><strong>ব্লাড গ্রুপ:</strong> ${donor.bloodGroup}</p>
                         <p><strong>বয়স:</strong> ${donor.age} বছর</p>
-                        <p><strong>ফোন:</strong> <a href="tel:${donor.phone}" style="color:#ff4d4d; text-decoration:none;">${donor.phone}</a></p>
-                        <p><strong>এলাকা:</strong> ${donor.location}</p>
+                        <p><strong>ফোন:</strong> <a href="tel:${donor.phone}">${donor.phone}</a></p>
+                        <p><strong>এলাকা:</strong> ${donor.upazila}, ${donor.district}</p>
                         <p><strong>সর্বশেষ দান:</strong> ${formatDate(donor.lastDonation)}</p>
                         ${canDonateAgain(donor.lastDonation) ? 
-                            '<p style="color:green; font-weight:bold;">✅ রক্তদানে প্রস্তুত</p>' : 
-                            '<p style="color:red;">⛔ আগামী ৩ মাসে রক্তদান করতে পারবেন না (সর্বশেষ দানের তারিখ: '+formatDate(donor.lastDonation)+')</p>'}
+                            '<p style="color:green;">✅ রক্তদানে প্রস্তুত</p>' : 
+                            '<p style="color:red;">⛔ আগামী ৩ মাসে রক্তদান করতে পারবেন না</p>'}
                     </div>
                 `).join('');
             }
         }
 
-        // ==================== ইনিশিয়ালাইজেশন ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            // লোকাল ডাটা লোড
-            const localData = localStorage.getItem('bloodDonors');
-            if (localData) {
-                donors = JSON.parse(localData);
-            }
-            
-            // তারিখ সেট করুন
+        // সিঙ্ক ডাটা
+        async function syncData() {
+            await loadDonorData();
+            showSyncStatus('ডাটা সফলভাবে সিঙ্ক হয়েছে', true);
+        }
+
+        // পেজ লোড হলে ইনিশিয়ালাইজেশন
+        document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('lastDonation').valueAsDate = new Date();
-            
-            // বিভাগ এবং জেলা প্রি-সিলেক্ট করুন
             document.getElementById('division').value = 'খুলনা';
             loadDistricts();
             document.getElementById('district').value = 'যশোর';
             loadUpazilas();
-            
-            // সার্চ ফিল্ডেও একইভাবে
             document.getElementById('searchDivision').value = 'খুলনা';
             loadSearchDistricts();
             document.getElementById('searchDistrict').value = 'যশোর';
             loadSearchUpazilas();
+            loadDonorData();
         });
     </script>
 </body>
