@@ -148,6 +148,28 @@
             display: grid;
             gap: 0.8rem;
         }
+        .copy-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 2px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 0.8rem;
+            transition: all 0.3s;
+        }
+        .copy-btn:hover {
+            background-color: #45a049;
+        }
+        .copy-btn:active {
+            transform: scale(0.95);
+        }
+        .phone-number {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
         
         @media (min-width: 768px) {
             nav a {
@@ -424,6 +446,18 @@
             return diffInMonths >= 3;
         }
 
+        // ক্লিপবোর্ডে কপি করার ফাংশন
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    showSyncStatus('ফোন নম্বর কপি করা হয়েছে: ' + text, true);
+                })
+                .catch(err => {
+                    showSyncStatus('কপি করতে সমস্যা হয়েছে', false);
+                    console.error('কপি করতে ব্যর্থ:', err);
+                });
+        }
+
         // JSONBin.io থেকে ডাটা লোড
         async function loadDonorData() {
             try {
@@ -526,7 +560,12 @@
                         <h3>${donor.name}</h3>
                         <p><strong>ব্লাড গ্রুপ:</strong> ${donor.bloodGroup}</p>
                         <p><strong>বয়স:</strong> ${donor.age} বছর</p>
-                        <p><strong>ফোন:</strong> <a href="tel:${donor.phone}">${donor.phone}</a></p>
+                        <p><strong>ফোন:</strong> 
+                            <span class="phone-number">
+                                ${donor.phone}
+                                <button class="copy-btn" onclick="copyToClipboard('${donor.phone}')">কপি</button>
+                            </span>
+                        </p>
                         <p><strong>এলাকা:</strong> ${donor.upazila}, ${donor.district}</p>
                         <p><strong>সর্বশেষ দান:</strong> ${formatDate(donor.lastDonation)}</p>
                         ${canDonateAgain(donor.lastDonation) ? 
